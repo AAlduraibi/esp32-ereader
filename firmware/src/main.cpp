@@ -1,17 +1,14 @@
 #include <Arduino.h>
+#include "display.h"
+#include "buttons.h"
+#include "storage.h"
+#include "reader.h"
+#include "battery.h"
+
+#include <Arduino.h>
 #include <GxEPD2_BW.h>
 #include <SPI.h>
 #include <SD.h>
-
-#define EPD_CS    5
-#define EPD_DC    16
-#define EPD_RST   17
-#define EPD_BUSY  26
-#define SD_CS     4
-#define BTN_POWER  33
-#define BTN_SELECT 32
-#define BTN_NEXT   25
-#define BTN_PREV   27
 
 GxEPD2_BW<GxEPD2_154_D67, GxEPD2_154_D67::HEIGHT> display(
   GxEPD2_154_D67(EPD_CS, EPD_DC, EPD_RST, EPD_BUSY));
