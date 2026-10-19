@@ -2,6 +2,19 @@
 #include "pins.h"
 #include <Arduino.h>
 
+//initial press
+static bool nextWasPressed = false;
+static bool prevWasPressed = false;
+static bool powerWasPressed = false;
+static bool selectWasPressed = false;
+
+//debounce
+constexpr unsigned long DEBOUNCE_MS = 30;
+static unsigned long nextLastTime = 0;
+static unsigned long prevLastTime = 0;
+static unsigned long powerLastTime = 0;
+static unsigned long selectLastTime = 0;
+
 void buttonsInit(){
     pinMode(BTN_POWER, INPUT_PULLUP);
     pinMode(BTN_SELECT, INPUT_PULLUP);
@@ -9,43 +22,62 @@ void buttonsInit(){
     pinMode(BTN_PREV, INPUT_PULLUP);
 }
 
-static bool nextWasPressed = false;
-static bool prevWasPressed = false;
-static bool powerWasPressed = false;
-static bool selectWasPressed = false;
-
 Button buttonsRead(){
-    if (digitalRead(BTN_NEXT) == LOW){
-        if (!nextWasPressed) {
-            nextWasPressed = true;
-            return Button::Next;
+    //next
+    if (millis() - nextLastTime > DEBOUNCE_MS) {
+        if (digitalRead(BTN_NEXT) == LOW) {
+            if (!nextWasPressed) {
+                nextWasPressed = true;
+                nextLastTime = millis();
+                return Button::Next;
+            }
+        } else if (nextWasPressed) {
+            nextWasPressed = false;
+            nextLastTime = millis();
         }
-    } else {
-        nextWasPressed = false;
     }
-    if (digitalRead(BTN_PREV) == LOW){
-        if (!prevWasPressed){
-            prevWasPressed = true;
-            return Button::Prev;
+
+    //prev
+    if (millis() - prevLastTime > DEBOUNCE_MS) {
+        if (digitalRead(BTN_PREV) == LOW) {
+            if (!prevWasPressed) {
+                prevWasPressed = true;
+                prevLastTime = millis();
+                return Button::Prev;
+            }
+        } else if (prevWasPressed) {
+            prevWasPressed = false;
+            prevLastTime = millis();
         }
-    } else {
-        prevWasPressed = false;
     }
-    if (digitalRead(BTN_SELECT) == LOW){
-        if (!selectWasPressed){
-            selectWasPressed = true;
-            return Button::Select;
+
+    //select
+    if (millis() - selectLastTime > DEBOUNCE_MS) {
+        if (digitalRead(BTN_SELECT) == LOW) {
+            if (!selectWasPressed) {
+                selectWasPressed = true;
+                selectLastTime = millis();
+                return Button::Select;
+            }
+        } else if (selectWasPressed) {
+            selectWasPressed = false;
+            selectLastTime = millis();
         }
-    } else {
-        selectWasPressed = false;
     }
-    if (digitalRead(BTN_POWER) == LOW){
-        if (!powerWasPressed){
-            powerWasPressed = true;
-            return Button::Power;
+
+    //power
+    if (millis() - powerLastTime > DEBOUNCE_MS) {
+        if (digitalRead(BTN_POWER) == LOW) {
+            if (!powerWasPressed) {
+                powerWasPressed = true;
+                powerLastTime = millis();
+                return Button::Power;
+            }
+        } else if (powerWasPressed) {
+            powerWasPressed = false;
+            powerLastTime = millis();
         }
-    } else {
-        powerWasPressed = false;
     }
+
     return Button::None;
 }
