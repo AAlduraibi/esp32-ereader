@@ -2,6 +2,7 @@
 #include "pins.h"
 #include <GxEPD2_BW.h>
 #include <SPI.h>
+#include <Fonts/FreeSerif9pt7b.h>
 
 static GxEPD2_BW<GxEPD2_154_D67, GxEPD2_154_D67::HEIGHT> display(
   GxEPD2_154_D67(EPD_CS, EPD_DC, EPD_RST, EPD_BUSY));
@@ -10,7 +11,8 @@ static GxEPD2_BW<GxEPD2_154_D67, GxEPD2_154_D67::HEIGHT> display(
 void displayInit() {
     SPI.begin(18, 19, 23);
     display.init(115200);
-    display.setRotation(0);
+    display.setRotation(3);
+    display.setFont(&FreeSerif9pt7b);
     display.setTextColor(GxEPD_BLACK);
 }
 

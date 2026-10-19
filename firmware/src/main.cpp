@@ -8,21 +8,17 @@
 void setup(){
   Serial.begin(115200);
   displayInit();
-  displayClear();
-  displayText(2,25, "i want to do this");
-  displayRefresh();
+  
   buttonsInit();
   
   if (!storageInit()){
     Serial.println("SD Init failed");
+    displayClear();
+    displayText(0, 15, "No SD card");
+    displayRefresh();
   }
   else{
-    int count = storageListBooks();
-    Serial.print("Books found: ");
-    Serial.println(count);
-    for (int i = 0; i < count; i++) {
-      Serial.println(storageBookName(i));
-    }
+    readerInit();
   }
 }
 
