@@ -5,7 +5,12 @@
 #include "reader.h"
 #include "battery.h"
 
-#include <Arduino.h>
-#include <GxEPD2_BW.h>
-#include <SPI.h>
-#include <SD.h>
+void setup(){
+  Serial.begin(115200);
+  displayInit();
+  displayClear();
+  displayText(2,25, "i want to do this");
+  displayRefresh();
+}
+
+void loop() {}
