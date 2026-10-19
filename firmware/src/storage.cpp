@@ -8,6 +8,7 @@ constexpr int MAX_NAME_LEN = 128;
 
 static char bookNames[MAX_BOOKS][MAX_NAME_LEN];
 static int bookCount = 0;
+static File bookFile;
 
 bool storageInit(){
     return SD.begin(SD_CS);
@@ -56,4 +57,28 @@ const char* storageBookName(int index){
     else{
         return bookNames[index];
     }
+}
+
+bool storageOpenBook(const char* name){
+    bookFile.close();
+
+    char path[140];
+    snprintf(path, sizeof(path), "/books/%s", name);
+
+    bookFile = SD.open(path);
+    return bookFile;
+}
+
+int storageReadBook(char* buf, int maxLen){
+    if (!bookFile) {
+        buf[0] = '\0';
+        return 0;
+    }
+    int num = bookFile.read((uint8_t*)buf, maxLen-1);
+    buf[num] = '\0';
+    return num;
+}
+
+void storageCloseBook(){
+    bookFile.close();
 }
