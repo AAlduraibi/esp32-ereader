@@ -63,6 +63,15 @@ static void drawMenu() {
 }
 
 
+static void drawPage(){
+    char buf[400];
+    displayClear();
+    storageReadBook(buf, sizeof(buf));
+    displayText(0,15,buf);
+    displayRefresh();
+}
+
+
 void readerInit(){
     bookCount = storageListBooks();
     drawMenu();
@@ -77,6 +86,13 @@ void readerHandleButton(Button b){
         else if (b == Button::Prev && cursor > 0){
             cursor --;
             drawMenu();
+        }
+        else if (b == Button::Select && bookCount > 0){
+            bool book = storageOpenBook(storageBookName(cursor));
+            if (!book) { return; }
+            screen = Screen::Book;
+            page = 0;
+            drawPage();
         }
     }
 }
