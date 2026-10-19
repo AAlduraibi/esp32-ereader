@@ -15,3 +15,5 @@ void displayText(int x, int y, const char* text);
 void displayRefresh();
 
 void displaySetStyle(Style style);
+
+int displayTextWidth(const char* text);

@@ -24,13 +24,8 @@ void setup(){
 
 void loop() {
   Button b = buttonsRead();
-
-  switch (b) {
-    case Button::Next:   Serial.println("next");   break;
-    case Button::Prev:   Serial.println("prev");   break;
-    case Button::Select: Serial.println("select"); break;
-    case Button::Power:  Serial.println("power");  break;
-    case Button::None:   break;
+  if (b != Button::None){
+    readerHandleButton(b);
   }
 }
 

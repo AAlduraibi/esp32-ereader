@@ -30,3 +30,12 @@ void displayRefresh() {
 }
 
 void displaySetStyle(Style style) {}
+
+int displayTextWidth(const char* text) {
+    int16_t x1, y1;     // the library fills these in, we don't need them
+    uint16_t w, h;      // w = width, h = height
+
+    display.getTextBounds(text, 0, 0, &x1, &y1, &w, &h);
+
+    return w;         
+}
