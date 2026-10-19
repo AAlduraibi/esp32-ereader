@@ -1,6 +1,7 @@
 #include "storage.h"
 #include "pins.h"
 #include <SD.h>
+#include <string.h>
 
 constexpr int MAX_BOOKS = 50;
 constexpr int MAX_NAME_LEN = 128;
@@ -12,6 +13,20 @@ bool storageInit(){
     return SD.begin(SD_CS);
 }
 
+static bool isBook(File& f){
+    const char* ext = strrchr(f.name(), '.');
+    if (f.isDirectory()){ return false;}
+    if (f.name()[0] == '.'){ return false;}
+    if (strlen(f.name()) >= MAX_NAME_LEN) { return false; }
+
+    if (ext == nullptr){ return false;}
+    else if (strcasecmp(ext, ".txt") == 0 || strcasecmp(ext, ".epub") == 0){
+        return true;
+    }
+    return false;
+
+}
+
 int storageListBooks(){
     bookCount = 0;
     File dir = SD.open("/books");
@@ -21,8 +36,11 @@ int storageListBooks(){
     } 
     File f = dir.openNextFile();
     while (f && bookCount < MAX_BOOKS){
-        strlcpy(bookNames[bookCount], f.name(), MAX_NAME_LEN);
-        bookCount += 1;
+        
+        if (isBook(f)){
+            strlcpy(bookNames[bookCount], f.name(), MAX_NAME_LEN);
+            bookCount += 1;
+        }
         f.close();
         f = dir.openNextFile();
     }
@@ -31,3 +49,11 @@ int storageListBooks(){
     return bookCount;
 }
 
+const char* storageBookName(int index){
+    if (index < 0 || index >= bookCount){
+        return nullptr;
+    }
+    else{
+        return bookNames[index];
+    }
+}
