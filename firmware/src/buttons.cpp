@@ -18,7 +18,7 @@ Button buttonsRead(){
     if (digitalRead(BTN_NEXT) == LOW){
         if (!nextWasPressed) {
             nextWasPressed = true;
-            return Button::next;
+            return Button::Next;
         }
     } else {
         nextWasPressed = false;
@@ -26,7 +26,7 @@ Button buttonsRead(){
     if (digitalRead(BTN_PREV) == LOW){
         if (!prevWasPressed){
             prevWasPressed = true;
-            return Button::prev;
+            return Button::Prev;
         }
     } else {
         prevWasPressed = false;
@@ -34,7 +34,7 @@ Button buttonsRead(){
     if (digitalRead(BTN_SELECT) == LOW){
         if (!selectWasPressed){
             selectWasPressed = true;
-            return Button::slect;
+            return Button::Select;
         }
     } else {
         selectWasPressed = false;
@@ -42,9 +42,10 @@ Button buttonsRead(){
     if (digitalRead(BTN_POWER) == LOW){
         if (!powerWasPressed){
             powerWasPressed = true;
-            return Button::power;
+            return Button::Power;
         }
     } else {
         powerWasPressed = false;
     }
+    return Button::None;
 }
