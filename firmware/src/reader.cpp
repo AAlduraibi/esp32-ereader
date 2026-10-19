@@ -12,6 +12,9 @@ static Screen screen = Screen::Menu;    // which screen is showing
 static int cursor = 0;                  // which book the > is on
 static int bookCount = 0;               // how many books there are
 static int page = 0;                    // which page you're on in the open book
+constexpr int MENU_LINES = 9;
+static int top = 0;
+
 
 static void drawTitle(int x, int y, const char* name) {
     int maxWidth = 200 - x;
@@ -43,9 +46,14 @@ static void drawMenu() {
         displayRefresh();
         return;
     }
-
-    for (int i = 0; i < bookCount; i++) {
-        int y = 15 + i * 20;
+    if (cursor < top){
+        top = cursor;
+    }
+    if (cursor >= top + MENU_LINES){
+        top = cursor - MENU_LINES + 1;
+    }
+    for (int i = top; i < top + MENU_LINES && i < bookCount; i++) {
+        int y = 15 + (i-top) * 20;
         if (i == cursor) {
             displayText(0, y, ">");
         }

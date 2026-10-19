@@ -14,6 +14,7 @@ void displayInit() {
     display.setRotation(3);
     display.setFont(&FreeSerif9pt7b);
     display.setTextColor(GxEPD_BLACK);
+    display.setTextWrap(false);   
 }
 
 void displayClear() {
