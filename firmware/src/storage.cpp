@@ -1,6 +1,7 @@
 #include "storage.h"
 #include "pins.h"
 #include <SD.h>
+#include <SPI.h>
 #include <string.h>
 
 constexpr int MAX_BOOKS = 50;
@@ -11,7 +12,7 @@ static int bookCount = 0;
 static File bookFile;
 
 bool storageInit(){
-    return SD.begin(SD_CS);
+    return SD.begin(SD_CS, SPI, 1000000);
 }
 
 static bool isBook(File& f){
