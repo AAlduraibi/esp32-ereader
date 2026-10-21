@@ -14,6 +14,7 @@ static int bookCount = 0;               // how many books there are
 static int page = 0;                    // which page you're on in the open book
 constexpr int MENU_LINES = 9;
 static int top = 0;
+constexpr int PAGE_LINES = 9;
 
 
 static void drawTitle(int x, int y, const char* name) {
@@ -62,12 +63,57 @@ static void drawMenu() {
     displayRefresh();
 }
 
+static int drawWrapped(const char* text){
+    char line[100] = "";
+    int y = 15;
+    int lines = 0;
+    int i = 0;
+    while (text[i] != '\0' && lines <PAGE_LINES){
+        if (text[i] == '\r' || text[i] == ' '){
+            i++;
+        }
+        else if (text[i] == '\n'){
+            displayText(0,y,line);
+            y += 20;
+            lines +=1;
+            line[0] = '\0';
+            i++;
+        }
+        else{
+            int j = i;
+            while (text[j] != ' ' && text[j] != '\n' && text[j] != '\r' && text[j] != '\0'){
+                j++;
+            }
+            char test[100];
+            strlcpy(test, line, sizeof(test));
+            if (line[0] != '\0'){
+                strlcat(test, " ", sizeof(test));
+            }
+            strncat(test, text+i, j-i);
+            if (displayTextWidth(test) <= 200){
+                strlcpy(line, test, sizeof(line));
+                i = j;
+            }
+            else{
+                displayText(0,y,line);
+                y += 20;
+                lines +=1;
+                line[0] = '\0';
+            }
+        }
+    }
+    if (line[0] != '\0' && lines <PAGE_LINES){
+        displayText(0, y, line);
+
+    }
+    return i;
+}
 
 static void drawPage(){
     char buf[400];
     displayClear();
     storageReadBook(buf, sizeof(buf));
-    displayText(0,15,buf);
+    drawWrapped(buf);
     displayRefresh();
 }
 
