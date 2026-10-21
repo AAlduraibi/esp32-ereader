@@ -89,16 +89,44 @@ static int drawWrapped(const char* text){
             if (line[0] != '\0'){
                 strlcat(test, " ", sizeof(test));
             }
-            strncat(test, text+i, j-i);
+            int room = (int)sizeof(test) - 1 - (int)strlen(test);
+            int n = j - i;
+            if (n > room){
+                n = room;
+            }
+            strncat(test, text+i, n);
             if (displayTextWidth(test) <= 200){
                 strlcpy(line, test, sizeof(line));
                 i = j;
             }
             else{
-                displayText(0,y,line);
-                y += 20;
-                lines +=1;
-                line[0] = '\0';
+                if (line[0] == '\0'){
+                    int k = j-i;
+                    if (k > (int)sizeof(test)-2){
+                        k = (int)sizeof(test)-2;
+                    }
+                    while (k>0){
+                        test[0] = '\0';
+                        strncat(test,text + i,k);
+                        strlcat(test,"-",sizeof(test));
+                        if (displayTextWidth(test) <= 200){
+                            break;
+                        }
+                        k--;
+                    }
+                    if (k == 0) k = 1;
+                    displayText(0,y,test);
+                    y += 20;
+                    lines += 1;
+                    i += k;
+                }
+                else{
+                    displayText(0,y,line);
+                    y += 20;
+                    lines +=1;
+                    line[0] = '\0';
+                }
+                
             }
         }
     }
