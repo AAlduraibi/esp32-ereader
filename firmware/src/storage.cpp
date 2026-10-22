@@ -83,3 +83,11 @@ int storageReadBook(char* buf, int maxLen){
 void storageCloseBook(){
     bookFile.close();
 }
+
+bool storageSeek(uint32_t pos){
+    if (!bookFile){
+        return false;
+    }
+    bool x = bookFile.seek(pos);
+    return x;
+}
