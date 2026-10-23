@@ -2,6 +2,7 @@
 #include "display.h"
 #include "storage.h"
 #include <string.h>
+#include <stdint.h>
 
 enum class Screen {
     Menu,
@@ -15,6 +16,10 @@ static int page = 0;                    // which page you're on in the open book
 constexpr int MENU_LINES = 9;
 static int top = 0;
 constexpr int PAGE_LINES = 9;
+constexpr int MAX_PAGES = 1000;
+static uint32_t pageStarts[MAX_PAGES];
+static bool lastPage = false;
+
 
 
 static void drawTitle(int x, int y, const char* name) {
@@ -140,8 +145,18 @@ static int drawWrapped(const char* text){
 static void drawPage(){
     char buf[400];
     displayClear();
-    storageReadBook(buf, sizeof(buf));
-    drawWrapped(buf);
+    storageSeek(pageStarts[page]);
+    int got = storageReadBook(buf, sizeof(buf));
+    int used = drawWrapped(buf);
+    if (buf[used] == '\0' && got < (int)sizeof(buf) - 1){
+        lastPage = true;
+    }
+    else{
+        lastPage = false;
+    }
+    if (page + 1 < MAX_PAGES){
+        pageStarts[page + 1] = pageStarts[page] + used;
+    }
     displayRefresh();
 }
 
@@ -166,7 +181,24 @@ void readerHandleButton(Button b){
             if (!book) { return; }
             screen = Screen::Book;
             page = 0;
+            pageStarts[0] = 0;
             drawPage();
         }
     }
+    else if (screen == Screen::Book){
+        if (b == Button::Next && page + 1 < MAX_PAGES && !lastPage){
+            page++;
+            drawPage();
+        }
+        else if (b == Button::Prev && page > 0){
+            page--;
+            drawPage();
+        }
+        else if (b == Button::Select){
+            storageCloseBook();
+            screen = Screen::Menu;
+            drawMenu();
+        }
+    }
 }
+
