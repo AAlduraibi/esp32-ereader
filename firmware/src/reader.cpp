@@ -157,6 +157,7 @@ static void drawPage(){
     if (page + 1 < MAX_PAGES){
         pageStarts[page + 1] = pageStarts[page] + used;
     }
+    storageSavePos(storageBookName(cursor), pageStarts[page]);
     displayRefresh();
 }
 
@@ -181,7 +182,7 @@ void readerHandleButton(Button b){
             if (!book) { return; }
             screen = Screen::Book;
             page = 0;
-            pageStarts[0] = 0;
+            pageStarts[0] = storageLoadPos(storageBookName(cursor));
             drawPage();
         }
     }
