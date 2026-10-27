@@ -12,7 +12,11 @@ static int bookCount = 0;
 static File bookFile;
 
 bool storageInit(){
-    return SD.begin(SD_CS, SPI, 1000000);
+    if (!SD.begin(SD_CS, SPI, 1000000)){
+        return false;
+    }
+    SD.mkdir("/state");
+    return true;
 }
 
 static bool isBook(File& f){
@@ -90,4 +94,28 @@ bool storageSeek(uint32_t pos){
     }
     bool x = bookFile.seek(pos);
     return x;
+}
+
+bool storageSavePos(const char* name, uint32_t pos){
+    char path[140];
+    snprintf(path, sizeof(path), "/state/%s.pos", name);
+    File posFile = SD.open(path, FILE_WRITE);
+    if (!posFile){ return false;}
+    size_t written  = posFile.write((uint8_t*)&pos, sizeof(pos));
+    posFile.close();
+    return (written == sizeof(pos));
+}
+
+uint32_t storageLoadPos(const char* name){
+    char path[140];
+    snprintf(path, sizeof(path), "/state/%s.pos", name);
+    File posFile = SD.open(path);
+    if (!posFile){ return 0;}
+    uint32_t pos = 0;
+    size_t written = posFile.read((uint8_t*)&pos, sizeof(pos));
+    posFile.close();
+    if (written != sizeof(pos)){
+        return 0;
+    }
+    return pos;
 }
