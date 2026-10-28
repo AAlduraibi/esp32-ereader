@@ -1,8 +1,10 @@
 #include "reader.h"
 #include "display.h"
 #include "storage.h"
+#include "power.h"
 #include <string.h>
 #include <stdint.h>
+
 
 enum class Screen {
     Menu,
@@ -168,6 +170,13 @@ void readerInit(){
 }
 
 void readerHandleButton(Button b){
+    if (b == Button::Power){
+        displayClear();
+        displayText((200-displayTextWidth("Sleeping"))/2, 100, "Sleeping");
+        displayRefresh();
+        displaySleep();
+        powerSleep();
+    }
     if (screen == Screen::Menu){
         if (b == Button::Next && cursor < bookCount - 1){
             cursor ++;
