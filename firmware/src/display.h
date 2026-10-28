@@ -17,3 +17,5 @@ void displayRefresh();
 void displaySetStyle(Style style);
 
 int displayTextWidth(const char* text);
+
+void displaySleep();

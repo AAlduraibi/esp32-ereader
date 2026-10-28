@@ -40,3 +40,7 @@ int displayTextWidth(const char* text) {
 
     return w;         
 }
+
+void displaySleep(){
+    display.hibernate();
+}
