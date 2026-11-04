@@ -4,6 +4,7 @@
 #include "power.h"
 #include <string.h>
 #include <stdint.h>
+#include <Arduino.h>
 
 
 enum class Screen {
@@ -19,6 +20,8 @@ constexpr int MENU_LINES = 9;
 static int top = 0;
 constexpr int PAGE_LINES = 9;
 constexpr int MAX_PAGES = 1000;
+constexpr unsigned long SLEEP_MS = 5*60*1000;
+static unsigned long lastActivity = 0;
 static uint32_t pageStarts[MAX_PAGES];
 static bool lastPage = false;
 
@@ -163,6 +166,14 @@ static void drawPage(){
     displayRefresh();
 }
 
+static void goToSleep(){
+    displayClear();
+    displayText((200-displayTextWidth("Sleeping"))/2, 100, "Sleeping");
+    displayRefresh();
+    displaySleep();
+    powerSleep();
+}
+
 
 void readerInit(){
     bookCount = storageListBooks();
@@ -170,12 +181,9 @@ void readerInit(){
 }
 
 void readerHandleButton(Button b){
+    lastActivity = millis();
     if (b == Button::Power){
-        displayClear();
-        displayText((200-displayTextWidth("Sleeping"))/2, 100, "Sleeping");
-        displayRefresh();
-        displaySleep();
-        powerSleep();
+        goToSleep();
     }
     if (screen == Screen::Menu){
         if (b == Button::Next && cursor < bookCount - 1){
@@ -212,3 +220,8 @@ void readerHandleButton(Button b){
     }
 }
 
+void readerUpdate(){
+    if ((millis() - lastActivity) > SLEEP_MS){
+        goToSleep();
+    }
+}

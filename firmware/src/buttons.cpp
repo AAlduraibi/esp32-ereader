@@ -20,6 +20,10 @@ void buttonsInit(){
     pinMode(BTN_SELECT, INPUT_PULLUP);
     pinMode(BTN_NEXT, INPUT_PULLUP);
     pinMode(BTN_PREV, INPUT_PULLUP);
+    if (digitalRead(BTN_POWER) == LOW){
+        powerWasPressed = true;
+        
+    }
 }
 
 Button buttonsRead(){

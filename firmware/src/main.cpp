@@ -27,5 +27,6 @@ void loop() {
   if (b != Button::None){
     readerHandleButton(b);
   }
+  readerUpdate();
 }
 
