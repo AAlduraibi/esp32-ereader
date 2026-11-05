@@ -24,7 +24,8 @@ constexpr unsigned long SLEEP_MS = 5*60*1000;
 static unsigned long lastActivity = 0;
 static uint32_t pageStarts[MAX_PAGES];
 static bool lastPage = false;
-
+static RTC_DATA_ATTR bool wasReading = false;
+static RTC_DATA_ATTR int sleepBook = 0;
 
 
 static void drawTitle(int x, int y, const char* name) {
@@ -166,7 +167,19 @@ static void drawPage(){
     displayRefresh();
 }
 
+static bool openBook(){
+    bool book = storageOpenBook(storageBookName(cursor));
+    if (!book) { return false; }
+    screen = Screen::Book;
+    page = 0;
+    pageStarts[0] = storageLoadPos(storageBookName(cursor));
+    drawPage();
+    return true;
+}
+
 static void goToSleep(bool white){
+    wasReading = (screen == Screen::Book);
+    sleepBook = cursor;
     displayClear();
     if (!white){
         displayText((200-displayTextWidth("Sleeping"))/2, 100, "Sleeping");
@@ -179,6 +192,10 @@ static void goToSleep(bool white){
 
 void readerInit(){
     bookCount = storageListBooks();
+    if (wasReading && sleepBook < bookCount){
+        cursor = sleepBook;
+        if (openBook()){return;}
+    }
     drawMenu();
 }
 
@@ -200,12 +217,7 @@ void readerHandleButton(Button b){
             drawMenu();
         }
         else if (b == Button::Select && bookCount > 0){
-            bool book = storageOpenBook(storageBookName(cursor));
-            if (!book) { return; }
-            screen = Screen::Book;
-            page = 0;
-            pageStarts[0] = storageLoadPos(storageBookName(cursor));
-            drawPage();
+            openBook();
         }
     }
     else if (screen == Screen::Book){
