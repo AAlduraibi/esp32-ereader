@@ -7,9 +7,11 @@ static bool nextWasPressed = false;
 static bool prevWasPressed = false;
 static bool powerWasPressed = false;
 static bool selectWasPressed = false;
+static bool powerLongSent = false;
 
 //debounce
 constexpr unsigned long DEBOUNCE_MS = 30;
+constexpr unsigned long LONG_PRESS_MS = 2*1000;
 static unsigned long nextLastTime = 0;
 static unsigned long prevLastTime = 0;
 static unsigned long powerLastTime = 0;
@@ -22,7 +24,7 @@ void buttonsInit(){
     pinMode(BTN_PREV, INPUT_PULLUP);
     if (digitalRead(BTN_POWER) == LOW){
         powerWasPressed = true;
-        
+        powerLongSent = true;
     }
 }
 
@@ -75,13 +77,23 @@ Button buttonsRead(){
             if (!powerWasPressed) {
                 powerWasPressed = true;
                 powerLastTime = millis();
-                return Button::Power;
             }
-        } else if (powerWasPressed) {
+            else if (!powerLongSent && (millis() - powerLastTime) >= LONG_PRESS_MS){
+                powerLongSent = true;
+                return Button::PowerLong;
+            }
+        } 
+        else if (powerWasPressed) {
             powerWasPressed = false;
             powerLastTime = millis();
+            bool wasLong = powerLongSent;
+            powerLongSent = false;
+            if (!wasLong){
+                return Button::Power;
+            }
         }
-    }
 
+    }
+    
     return Button::None;
 }

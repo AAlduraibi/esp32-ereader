@@ -166,9 +166,11 @@ static void drawPage(){
     displayRefresh();
 }
 
-static void goToSleep(){
+static void goToSleep(bool white){
     displayClear();
-    displayText((200-displayTextWidth("Sleeping"))/2, 100, "Sleeping");
+    if (!white){
+        displayText((200-displayTextWidth("Sleeping"))/2, 100, "Sleeping");
+    }
     displayRefresh();
     displaySleep();
     powerSleep();
@@ -183,7 +185,10 @@ void readerInit(){
 void readerHandleButton(Button b){
     lastActivity = millis();
     if (b == Button::Power){
-        goToSleep();
+        goToSleep(false);
+    }
+    if (b == Button::PowerLong){
+        goToSleep(true);
     }
     if (screen == Screen::Menu){
         if (b == Button::Next && cursor < bookCount - 1){
@@ -222,6 +227,6 @@ void readerHandleButton(Button b){
 
 void readerUpdate(){
     if ((millis() - lastActivity) > SLEEP_MS){
-        goToSleep();
+        goToSleep(false);
     }
 }

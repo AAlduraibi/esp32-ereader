@@ -3,6 +3,7 @@
 enum class Button{
     None,
     Power,
+    PowerLong,
     Next,
     Prev,
     Select
