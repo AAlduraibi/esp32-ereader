@@ -119,3 +119,8 @@ uint32_t storageLoadPos(const char* name){
     }
     return pos;
 }
+
+uint32_t storageBookSize(){
+    if (!bookFile){ return 0;}
+    return bookFile.size();
+}

@@ -18,3 +18,5 @@ bool storageSeek(uint32_t pos);
 bool storageSavePos(const char* name, uint32_t pos);
 
 uint32_t storageLoadPos(const char* name);
+
+uint32_t storageBookSize();
