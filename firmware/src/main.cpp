@@ -4,6 +4,8 @@
 #include "storage.h"
 #include "reader.h"
 #include "battery.h"
+#include "epub.h"
+
 
 void setup(){
   Serial.begin(115200);
@@ -18,6 +20,7 @@ void setup(){
     displayRefresh();
   }
   else{
+    epubTest("The Way of Kings (Brandon Sanderson).epub");
     readerInit();
   }
 }

@@ -124,3 +124,8 @@ uint32_t storageBookSize(){
     if (!bookFile){ return 0;}
     return bookFile.size();
 }
+
+int storageReadBytes(uint8_t* buf, int len){
+    if (!bookFile){ return 0;}
+    return bookFile.read(buf, len);
+}
