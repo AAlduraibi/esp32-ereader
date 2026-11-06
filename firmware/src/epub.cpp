@@ -30,9 +30,22 @@ static bool readEOCD(){
 static void listFiles(){
     uint32_t pos = cdOffset;
     for (int i=0; i < cdCount; i++){
-        storageSeek(pos);
+        if (!storageSeek(pos)){ return; }
         uint8_t h[46];
         if (storageReadBytes(h, 46) != 46){ return;}
+        if (rd32(h) != 0x02014b50){ return;}
+        uint16_t nameLen = rd16(h + 28);
+        uint16_t extraLen = rd16(h + 30);
+        uint16_t commentLen = rd16(h + 32);
+        char name[128];
+        int n = nameLen;
+        if (n > (int)sizeof(name) - 1){
+            n = sizeof(name) - 1;
+        }
+        storageReadBytes((uint8_t*)name, n);
+        name[n] = '\0';
+        Serial.println(name);
+        pos += 46 + nameLen + extraLen + commentLen;
     }
 }
 
@@ -43,5 +56,6 @@ bool epubTest(const char* name){
         return false;
     }
     Serial.println(cdCount);
+    listFiles();
     return true;
 }
