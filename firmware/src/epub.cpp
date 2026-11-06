@@ -2,10 +2,18 @@
 #include <rom/miniz.h>
 #include <stdint.h>
 #include "storage.h"
+#include <string.h>
 
 
 static uint16_t cdCount = 0;
 static uint32_t cdOffset = 0;
+
+struct ZipEntry {
+    uint16_t method;
+    uint32_t compSize;
+    uint32_t uncompSize;
+    uint32_t localOffset;
+};
 
 static uint16_t rd16(const uint8_t* p){
     return p[0] | (p[1] << 8);
@@ -47,6 +55,45 @@ static void listFiles(){
         Serial.println(name);
         pos += 46 + nameLen + extraLen + commentLen;
     }
+}
+
+static bool findFile(const char* want, ZipEntry* out){
+    uint32_t pos = cdOffset;
+    for (int i=0; i < cdCount; i++){
+    if (!storageSeek(pos)){ return false; }
+    uint8_t h[46];
+    if (storageReadBytes(h, 46) != 46){ return false;}
+    if (rd32(h) != 0x02014b50){ return false;}
+    uint16_t nameLen = rd16(h + 28);
+    uint16_t extraLen = rd16(h + 30);
+    uint16_t commentLen = rd16(h + 32);
+    char name[128];
+        int n = nameLen;
+        if (n > (int)sizeof(name) - 1){
+            n = sizeof(name) - 1;
+        }
+        storageReadBytes((uint8_t*)name, n);
+        name[n] = '\0';
+        if (strcmp(name, want) == 0){
+            out->method = rd16(h + 10);
+            out->compSize = rd32(h + 20);
+            out->uncompSize = rd32(h + 24);
+            out->localOffset = rd32(h + 42);
+            return true;
+        }
+        pos += 46 + nameLen + extraLen + commentLen;
+    }
+    return false;
+}
+
+static uint32_t dataStart(const ZipEntry* e){
+    if (!storageSeek(e->localOffset)){ return 0;}
+    uint8_t lh[30];
+    if (storageReadBytes(lh, 30) != 30){ return 0;}
+    if (rd32(lh) != 0x04034b50){ return 0;}
+    uint16_t nameLen = rd16(lh+26);
+    uint16_t extraLen = rd16(lh+28);
+    return e->localOffset + 30 + nameLen + extraLen;
 }
 
 bool epubTest(const char* name){
