@@ -104,5 +104,10 @@ bool epubTest(const char* name){
     }
     Serial.println(cdCount);
     listFiles();
+    ZipEntry e;
+    if (!findFile("mimetype", &e)){
+        Serial.println("no mimetype");
+        return false;
+    }
     return true;
 }
