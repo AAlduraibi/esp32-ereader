@@ -15,12 +15,27 @@ struct ZipEntry {
     uint32_t localOffset;
 };
 
+static uint8_t inBuf[1024];
+
+static uint8_t dict[TINFL_LZ_DICT_SIZE];
+
+static tinfl_decompressor inflator;
+
 static uint16_t rd16(const uint8_t* p){
     return p[0] | (p[1] << 8);
 }
 
 static uint32_t rd32(const uint8_t* p){
     return p[0] | (p[1] << 8) | (p[2] << 16) | ((uint32_t)p[3] << 24);
+}
+
+static bool endsWith(const char* s, const char* end){
+    int lenS = strlen(s);
+    int lenE = strlen(end);
+    if (lenE>lenS){
+        return false;
+    }
+    return strcmp(end, s + (lenS-lenE)) == 0;
 }
 
 static bool readEOCD(){
@@ -96,6 +111,36 @@ static uint32_t dataStart(const ZipEntry* e){
     return e->localOffset + 30 + nameLen + extraLen;
 }
 
+static bool findChapter(ZipEntry* out){
+    uint32_t pos = cdOffset;
+    for (int i=0; i < cdCount; i++){
+    if (!storageSeek(pos)){ return false; }
+    uint8_t h[46];
+    if (storageReadBytes(h, 46) != 46){ return false;}
+    if (rd32(h) != 0x02014b50){ return false;}
+    uint16_t nameLen = rd16(h + 28);
+    uint16_t extraLen = rd16(h + 30);
+    uint16_t commentLen = rd16(h + 32);
+    char name[128];
+        int n = nameLen;
+        if (n > (int)sizeof(name) - 1){
+            n = sizeof(name) - 1;
+        }
+        storageReadBytes((uint8_t*)name, n);
+        name[n] = '\0';
+        if (endsWith(name, ".xhtml") || endsWith(name, ".html") || endsWith(name, ".htm")){
+            out->method = rd16(h + 10);
+            out->compSize = rd32(h + 20);
+            out->uncompSize = rd32(h + 24);
+            out->localOffset = rd32(h + 42);
+            Serial.println(name);
+            return true;
+        }
+        pos += 46 + nameLen + extraLen + commentLen;
+    }
+    return false;
+}
+
 bool epubTest(const char* name){
     if (!storageOpenBook(name)){ return false;}
     if (!readEOCD()){ 
@@ -120,5 +165,16 @@ bool epubTest(const char* name){
     int got = storageReadBytes((uint8_t*)buf, n);
     buf[got] = '\0';
     Serial.println(buf);
+    if (!findChapter(&e)){
+        Serial.println("no chapter");
+        return false;
+    }
+    Serial.println(e.method);
+    Serial.println(e.uncompSize);
+    start = dataStart(&e);
+    if (start == 0 || !storageSeek(start)){
+        Serial.println("bad chapter header");
+        return false;
+    }
     return true;
 }
