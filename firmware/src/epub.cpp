@@ -109,5 +109,16 @@ bool epubTest(const char* name){
         Serial.println("no mimetype");
         return false;
     }
+    uint32_t start = dataStart(&e);
+    if (start == 0 || !storageSeek(start)){
+        Serial.println("bad local header");
+        return false;
+    }
+    char buf[64];
+    int n = e.compSize;
+    if (n > 63){n=63;}
+    int got = storageReadBytes((uint8_t*)buf, n);
+    buf[got] = '\0';
+    Serial.println(buf);
     return true;
 }
