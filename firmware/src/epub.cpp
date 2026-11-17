@@ -176,5 +176,19 @@ bool epubTest(const char* name){
         Serial.println("bad chapter header");
         return false;
     }
+    tinfl_init(&inflator);
+    uint32_t left = e.compSize;
+    size_t inPos = 0;
+    size_t inAvail = 0;
+    size_t dictPos = 0;
+    uint32_t printed = 0;
+    while (printed < 500){
+        if (inAvail == 0 && left >0){
+            int n = left;
+            if (n > (int)sizeof(inBuf)){
+                n = sizeof(inBuf);
+            }
+        }
+    }
     return true;
 }
