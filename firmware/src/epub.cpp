@@ -188,6 +188,36 @@ bool epubTest(const char* name){
             if (n > (int)sizeof(inBuf)){
                 n = sizeof(inBuf);
             }
+            int got = storageReadBytes(inBuf, n);
+            if (got<= 0){
+                Serial.println("read failed");
+                return false;
+            }
+            left -= got;
+            inAvail = got;
+            inPos = 0;
+        }
+        size_t inSize = inAvail;
+        size_t outSize = TINFL_LZ_DICT_SIZE - dictPos;
+        int flags = 0;
+        if (left>0){
+            flags |= TINFL_FLAG_HAS_MORE_INPUT;
+        }
+        tinfl_status status = tinfl_decompress(&inflator, inBuf+inPos, &inSize, dict, dict+dictPos, &outSize, flags);
+        inPos += inSize;
+        inAvail -= inSize;
+        Serial.write(dict+dictPos, outSize);
+        printed += outSize;
+        dictPos += outSize;
+        if (dictPos == TINFL_LZ_DICT_SIZE){
+            dictPos = 0;
+        }
+        if (status == TINFL_STATUS_DONE){
+            break;
+        }
+        if (status < 0){
+            Serial.println("inflate failed");
+            return false;
         }
     }
     return true;
