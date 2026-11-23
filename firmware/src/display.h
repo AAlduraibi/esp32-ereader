@@ -18,4 +18,6 @@ void displaySetStyle(Style style);
 
 int displayTextWidth(const char* text);
 
+int displayTextAdvance(const char* text);
+
 void displaySleep();

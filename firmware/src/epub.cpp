@@ -216,6 +216,19 @@ static bool isBreak(const char* t){
     return false;
 }
 
+static char styleMarker(const char* n){
+    if (strcmp(n, "b") == 0 || strcmp(n, "strong") == 0){
+        return MARK_BOLD;
+    }
+    if (strcmp(n, "i") == 0 || strcmp(n, "em") == 0){
+        return MARK_ITALIC;
+    }
+    if (strcmp(n, "/b") == 0 || strcmp(n, "/strong") == 0 || strcmp(n, "/i") == 0 || strcmp(n, "/em") == 0){
+        return MARK_NORMAL;
+    }
+    return 0;
+}
+
 static char entityChar(const char* n){
     if (strcmp(n, "amp") == 0){
         return '&';
@@ -276,6 +289,10 @@ static bool parseChunk(const uint8_t* data, size_t len){
                 if (isBreak(tagName) && inBody){
                     if (!outByte('\n')){ return false;}
                     lastSpace = true;
+                }
+                char m = styleMarker(tagName);
+                if (m != 0 && inBody){
+                    if (!outByte(m)){ return false;}
                 }
             }
             else if (c == ' ' || c == '\n' || c == '\r'|| c == '\t' || (c == '/' && tagLen > 0)){
