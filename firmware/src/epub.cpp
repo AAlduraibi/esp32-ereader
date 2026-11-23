@@ -141,6 +141,54 @@ static bool findChapter(ZipEntry* out){
     return false;
 }
 
+static bool inflateToCache(const ZipEntry* e){
+    uint32_t start = dataStart(e);
+    if (start == 0 || !storageSeek(start)){ return false;}
+    tinfl_init(&inflator);
+    uint32_t left = e->compSize;
+    size_t inPos = 0;
+    size_t inAvail = 0;
+    size_t dictPos = 0;
+    while (true) {
+        if (inAvail == 0 && left >0){
+            int n = left;
+            if (n > (int)sizeof(inBuf)){
+                n = sizeof(inBuf);
+            }
+            int got = storageReadBytes(inBuf, n);
+            if (got<= 0){
+                Serial.println("read failed");
+                return false;
+            }
+            left -= got;
+            inAvail = got;
+            inPos = 0;
+        }
+        size_t inSize = inAvail;
+        size_t outSize = TINFL_LZ_DICT_SIZE - dictPos;
+        int flags = 0;
+        if (left>0){
+            flags |= TINFL_FLAG_HAS_MORE_INPUT;
+        }
+        tinfl_status status = tinfl_decompress(&inflator, inBuf+inPos, &inSize, dict, dict+dictPos, &outSize, flags);
+        inPos += inSize;
+        inAvail -= inSize;
+        if (!storageWriteCache(dict + dictPos, (int)outSize)) { return false;}
+        dictPos += outSize;
+        if (dictPos == TINFL_LZ_DICT_SIZE){
+            dictPos = 0;
+        }
+        if (status == TINFL_STATUS_DONE){
+            break;
+        }
+        if (status < 0){
+            Serial.println("inflate failed");
+            return false;
+        }
+    }
+    return true;
+}
+
 bool epubTest(const char* name){
     if (!storageOpenBook(name)){ return false;}
     if (!readEOCD()){ 

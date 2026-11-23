@@ -10,6 +10,7 @@ constexpr int MAX_NAME_LEN = 128;
 static char bookNames[MAX_BOOKS][MAX_NAME_LEN];
 static int bookCount = 0;
 static File bookFile;
+static File cacheFile;
 
 bool storageInit(){
     if (!SD.begin(SD_CS, SPI, 1000000)){
@@ -118,6 +119,23 @@ uint32_t storageLoadPos(const char* name){
         return 0;
     }
     return pos;
+}
+
+bool storageOpenCache(const char* name){
+    char path[140];
+    snprintf(path, sizeof(path), "/state/%s.txt", name);
+    cacheFile = SD.open(path, FILE_WRITE);
+    return cacheFile;
+}
+
+bool storageWriteCache(const uint8_t* buf, int len){
+    if (!cacheFile){ return false;}
+    size_t written = cacheFile.write(buf, len);
+    return written == (size_t)len;
+}
+
+void storageCloseCache(){
+    cacheFile.close();
 }
 
 uint32_t storageBookSize(){

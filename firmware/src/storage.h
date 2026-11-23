@@ -22,3 +22,9 @@ uint32_t storageLoadPos(const char* name);
 uint32_t storageBookSize();
 
 int storageReadBytes(uint8_t* buf, int len);
+
+bool storageOpenCache(const char* name);
+
+bool storageWriteCache(const uint8_t* buf, int len);
+
+void storageCloseCache();
