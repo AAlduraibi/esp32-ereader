@@ -21,6 +21,12 @@ static uint8_t dict[TINFL_LZ_DICT_SIZE];
 
 static tinfl_decompressor inflator;
 
+static uint8_t outBuf[512];
+
+static int outLen = 0;
+
+static bool inTag = false;
+
 static uint16_t rd16(const uint8_t* p){
     return p[0] | (p[1] << 8);
 }
@@ -144,10 +150,46 @@ static bool findChapter(ZipEntry* out){
     return false;
 }
 
+static bool flushOut(){
+    if (outLen == 0){
+        return true;
+    }
+    bool ok = storageWriteCache(outBuf, outLen);
+    outLen = 0;
+    return ok;
+}
+
+static bool outByte(uint8_t c){
+    if (outLen == (int)sizeof(outBuf) && !flushOut()){ return false;}
+    outBuf[outLen] = c;
+    outLen += 1;
+    return true;
+}
+
+static bool parseChunk(const uint8_t* data, size_t len){
+    for (size_t i=0; i<len; i++){
+        uint8_t c = data[i];
+        if (inTag){
+            if (c == '>'){
+                inTag = false;
+            }
+            continue;
+        }
+        if (c == '<'){
+            inTag = true;
+            continue;
+        }
+        if (!outByte(c)){ return false;}
+    }
+    return true;
+}
+
 static bool inflateToCache(const ZipEntry* e){
     uint32_t start = dataStart(e);
     if (start == 0 || !storageSeek(start)){ return false;}
     tinfl_init(&inflator);
+    inTag = false;
+    outLen = 0;
     uint32_t left = e->compSize;
     size_t inPos = 0;
     size_t inAvail = 0;
@@ -176,7 +218,7 @@ static bool inflateToCache(const ZipEntry* e){
         tinfl_status status = tinfl_decompress(&inflator, inBuf+inPos, &inSize, dict, dict+dictPos, &outSize, flags);
         inPos += inSize;
         inAvail -= inSize;
-        if (!storageWriteCache(dict + dictPos, (int)outSize)) { return false;}
+        if (!parseChunk(dict + dictPos, outSize)) { return false;}
         dictPos += outSize;
         if (dictPos == TINFL_LZ_DICT_SIZE){
             dictPos = 0;
@@ -189,7 +231,7 @@ static bool inflateToCache(const ZipEntry* e){
             return false;
         }
     }
-    return true;
+    return flushOut();
 }
 
 bool epubTest(const char* name){
