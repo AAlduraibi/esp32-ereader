@@ -50,6 +50,8 @@ static bool readEOCD(){
     return true;
 }
 
+// TEST (stage 1): prints every file name in the zip
+/*
 static void listFiles(){
     uint32_t pos = cdOffset;
     for (int i=0; i < cdCount; i++){
@@ -71,6 +73,7 @@ static void listFiles(){
         pos += 46 + nameLen + extraLen + commentLen;
     }
 }
+*/
 
 static bool findFile(const char* want, ZipEntry* out){
     uint32_t pos = cdOffset;
@@ -196,7 +199,6 @@ bool epubTest(const char* name){
         return false;
     }
     Serial.println(cdCount);
-    listFiles();
     ZipEntry e;
     if (!findFile("mimetype", &e)){
         Serial.println("no mimetype");
@@ -219,54 +221,16 @@ bool epubTest(const char* name){
     }
     Serial.println(e.method);
     Serial.println(e.uncompSize);
-    start = dataStart(&e);
-    if (start == 0 || !storageSeek(start)){
-        Serial.println("bad chapter header");
+    if (!storageOpenCache(name)){
+        Serial.println("cache open failed");
         return false;
     }
-    tinfl_init(&inflator);
-    uint32_t left = e.compSize;
-    size_t inPos = 0;
-    size_t inAvail = 0;
-    size_t dictPos = 0;
-    uint32_t printed = 0;
-    while (printed < 500){
-        if (inAvail == 0 && left >0){
-            int n = left;
-            if (n > (int)sizeof(inBuf)){
-                n = sizeof(inBuf);
-            }
-            int got = storageReadBytes(inBuf, n);
-            if (got<= 0){
-                Serial.println("read failed");
-                return false;
-            }
-            left -= got;
-            inAvail = got;
-            inPos = 0;
-        }
-        size_t inSize = inAvail;
-        size_t outSize = TINFL_LZ_DICT_SIZE - dictPos;
-        int flags = 0;
-        if (left>0){
-            flags |= TINFL_FLAG_HAS_MORE_INPUT;
-        }
-        tinfl_status status = tinfl_decompress(&inflator, inBuf+inPos, &inSize, dict, dict+dictPos, &outSize, flags);
-        inPos += inSize;
-        inAvail -= inSize;
-        Serial.write(dict+dictPos, outSize);
-        printed += outSize;
-        dictPos += outSize;
-        if (dictPos == TINFL_LZ_DICT_SIZE){
-            dictPos = 0;
-        }
-        if (status == TINFL_STATUS_DONE){
-            break;
-        }
-        if (status < 0){
-            Serial.println("inflate failed");
-            return false;
-        }
+    bool ok = inflateToCache(&e);
+    storageCloseCache();
+    if (!ok){
+        Serial.println("inflate to cache failed");
+        return false;
     }
+    Serial.println("cache written");
     return true;
 }
