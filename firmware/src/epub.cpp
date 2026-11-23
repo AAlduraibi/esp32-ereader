@@ -27,6 +27,26 @@ static int outLen = 0;
 
 static bool inTag = false;
 
+static bool lastSpace = true;
+
+static char tagName[8];
+
+static int tagLen = 0;
+
+static bool nameDone = false;
+
+static bool inBody= false;
+
+static bool inEntity = false;
+
+static char entName[8];
+
+static int entLen = 0;
+
+static uint8_t prev1 = 0;
+
+static uint8_t prev2 = 0;
+
 static uint16_t rd16(const uint8_t* p){
     return p[0] | (p[1] << 8);
 }
@@ -166,18 +186,150 @@ static bool outByte(uint8_t c){
     return true;
 }
 
+static bool isBreak(const char* t){
+    if (strcmp(t, "/p") == 0){
+        return true;
+    }
+    if (strcmp(t, "br") == 0){
+        return true;
+    }
+    if (strcmp(t, "/h1") == 0){
+        return true;
+    }
+    if (strcmp(t, "/h2") == 0){
+        return true;
+    }
+    if (strcmp(t, "/h3") == 0){
+        return true;
+    }
+    if (strcmp(t, "/h4") == 0){
+        return true;
+    }
+    if (strcmp(t, "/h5") == 0){
+        return true;
+    }
+    if (strcmp(t, "/h6") == 0){
+        return true;
+    }
+    return false;
+}
+
+static char entityChar(const char* n){
+    if (strcmp(n, "amp") == 0){
+        return '&';
+    }
+    if (strcmp(n, "lt") == 0){
+        return '<';
+    }
+    if (strcmp(n, "gt") == 0){
+        return '>';
+    }
+    if (strcmp(n, "quot") == 0){
+        return '"';
+    }
+    if (strcmp(n, "apos") == 0){
+        return '\'';
+    }
+    if (strcmp(n, "nbsp") == 0){
+        return ' ';
+    }
+    if (strcmp(n, "#8216") == 0 || strcmp(n, "#8217") == 0){
+        return '\'';
+    }
+    if (strcmp(n, "#8220") == 0 || strcmp(n, "#8221") == 0){
+        return '"';
+    }
+    if (strcmp(n, "#8211") == 0 || strcmp(n, "#8212") == 0){
+        return '-';
+    }
+    return 0;
+}
+
+static char utf8Char(uint8_t p2, uint8_t p1, uint8_t c){
+    if (p2 == 0xE2 && p1 == 0x80 && (c == 0x98 || c == 0x99)){
+        return '\'';
+    }
+    if (p2 == 0xE2 && p1 == 0x80 && (c == 0x9C || c == 0x9D)){
+        return '"';
+    }
+    if (p2 == 0xE2 && p1 == 0x80 && (c == 0x93 || c == 0x94)){
+        return '-';
+    }
+    if (p1 == 0xC2 && c == 0xA0){
+        return ' ';
+    }
+    return 0;
+}
+
 static bool parseChunk(const uint8_t* data, size_t len){
     for (size_t i=0; i<len; i++){
         uint8_t c = data[i];
         if (inTag){
             if (c == '>'){
                 inTag = false;
+                tagName[tagLen] = '\0';
+                if (strcmp("body",tagName) == 0){
+                    inBody = true;
+                }
+                if (isBreak(tagName) && inBody){
+                    if (!outByte('\n')){ return false;}
+                    lastSpace = true;
+                }
+            }
+            else if (c == ' ' || c == '\n' || c == '\r'|| c == '\t' || (c == '/' && tagLen > 0)){
+                nameDone = true;
+            }
+            else if (!nameDone && tagLen <7){
+                tagName[tagLen] = c;
+                tagLen++;
             }
             continue;
         }
         if (c == '<'){
             inTag = true;
+            tagLen = 0;
+            nameDone = false;
             continue;
+        }
+        if (!inBody){ continue;}
+        if (inEntity){
+            if (c == ';'){
+                inEntity = false;
+                entName[entLen] = '\0';
+                char r = entityChar(entName);
+                if (r != 0){
+                    if (!outByte(r)){ return false;}
+                    lastSpace = (r == ' ');
+                }
+            }
+            else if (entLen<7){
+                entName[entLen] = c;
+                entLen++;
+            }
+            continue;
+        }
+        if (c == '&'){
+            inEntity = true;
+            entLen = 0;
+            continue;
+        }
+        if (c >= 0x80){
+            char r = utf8Char(prev2, prev1, c);
+            prev2 = prev1;
+            prev1 = c;
+            if (r != 0){
+                    if (!outByte(r)){ return false;}
+                    lastSpace = (r == ' ');
+                }
+            continue;
+        }
+        if (c == ' ' || c == '\n' || c == '\r'|| c == '\t'){
+            if (lastSpace){ continue;}
+            lastSpace = true;
+            c = ' ';
+        }
+        else{
+            lastSpace = false;
         }
         if (!outByte(c)){ return false;}
     }
@@ -190,6 +342,11 @@ static bool inflateToCache(const ZipEntry* e){
     tinfl_init(&inflator);
     inTag = false;
     outLen = 0;
+    lastSpace = true;
+    inBody = false;
+    inEntity = false;
+    prev1 = 0;
+    prev2 = 0;
     uint32_t left = e->compSize;
     size_t inPos = 0;
     size_t inAvail = 0;
