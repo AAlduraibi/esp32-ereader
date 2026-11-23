@@ -4,7 +4,6 @@
 #include "storage.h"
 #include "reader.h"
 #include "battery.h"
-#include "epub.h"
 
 
 void setup(){
@@ -20,7 +19,6 @@ void setup(){
     displayRefresh();
   }
   else{
-    epubTest("The Way of Kings (Brandon Sanderson).epub");
     readerInit();
   }
 }

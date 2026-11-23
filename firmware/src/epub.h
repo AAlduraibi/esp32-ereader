@@ -1,5 +1,8 @@
 #pragma once
-#include <Arduino.h>
 
 
-bool epubTest(const char* name);
+//bool epubTest(const char* name);
+
+bool epubBuildCache(const char* name);
+
+bool epubIsEpub(const char* name);

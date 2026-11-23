@@ -3,6 +3,8 @@
 #include <stdint.h>
 #include "storage.h"
 #include <string.h>
+#include <Arduino.h>
+
 
 
 static uint16_t cdCount = 0;
@@ -391,6 +393,8 @@ static bool inflateToCache(const ZipEntry* e){
     return flushOut();
 }
 
+// TEST (stage 2): checks mimetype, inflates first chapter to cache
+/*
 bool epubTest(const char* name){
     if (!storageOpenBook(name)){ return false;}
     if (!readEOCD()){ 
@@ -432,4 +436,20 @@ bool epubTest(const char* name){
     }
     Serial.println("cache written");
     return true;
+}
+*/
+
+bool epubBuildCache(const char* name){
+    if(!storageOpenBook(name)){ return false;}
+    if(!readEOCD()){ return false;}
+    ZipEntry e;
+    if (!findChapter(&e)){ return false;}
+    if (!storageOpenCache(name)){ return false;}
+    bool ok = inflateToCache(&e);
+    storageCloseCache();
+    return ok;
+}
+
+bool epubIsEpub(const char* name){
+    return endsWith(name, ".epub");
 }

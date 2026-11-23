@@ -138,6 +138,16 @@ void storageCloseCache(){
     cacheFile.close();
 }
 
+bool storageOpenCacheRead(const char* name){
+    bookFile.close();
+
+    char path[140];
+    snprintf(path, sizeof(path), "/state/%s.txt", name);
+
+    bookFile = SD.open(path);
+    return bookFile;
+}
+
 uint32_t storageBookSize(){
     if (!bookFile){ return 0;}
     return bookFile.size();

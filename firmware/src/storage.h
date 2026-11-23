@@ -28,3 +28,5 @@ bool storageOpenCache(const char* name);
 bool storageWriteCache(const uint8_t* buf, int len);
 
 void storageCloseCache();
+
+bool storageOpenCacheRead(const char* name);

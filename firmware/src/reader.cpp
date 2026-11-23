@@ -2,6 +2,7 @@
 #include "display.h"
 #include "storage.h"
 #include "power.h"
+#include "epub.h"
 #include <string.h>
 #include <stdint.h>
 #include <Arduino.h>
@@ -168,11 +169,21 @@ static void drawPage(){
 }
 
 static bool openBook(){
-    bool book = storageOpenBook(storageBookName(cursor));
-    if (!book) { return false; }
+    const char* name = storageBookName(cursor);
+    if (epubIsEpub(name)){
+        if (!storageOpenCacheRead(name)){
+            if(!epubBuildCache(name)){
+                return false;
+            }
+            if (!storageOpenCacheRead(name)){ return false;}
+        }
+    }
+    else{
+        if (!storageOpenBook(name)) { return false;}
+    }
     screen = Screen::Book;
     page = 0;
-    pageStarts[0] = storageLoadPos(storageBookName(cursor));
+    pageStarts[0] = storageLoadPos(name);
     drawPage();
     return true;
 }
