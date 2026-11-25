@@ -49,6 +49,14 @@ static uint8_t prev1 = 0;
 
 static uint8_t prev2 = 0;
 
+static char opfPath[128];
+
+static int opfLen = 0;
+
+static int matchPos = 0;
+
+static bool copying = false;
+
 static uint16_t rd16(const uint8_t* p){
     return p[0] | (p[1] << 8);
 }
@@ -355,17 +363,14 @@ static bool parseChunk(const uint8_t* data, size_t len){
     return true;
 }
 
-static bool inflateToCache(const ZipEntry* e){
+using Sink = bool (*)(const uint8_t* data, size_t len); 
+
+
+
+static bool inflateFile(const ZipEntry* e, Sink sink){
     uint32_t start = dataStart(e);
     if (start == 0 || !storageSeek(start)){ return false;}
     tinfl_init(&inflator);
-    inTag = false;
-    outLen = 0;
-    lastSpace = true;
-    inBody = false;
-    inEntity = false;
-    prev1 = 0;
-    prev2 = 0;
     uint32_t left = e->compSize;
     size_t inPos = 0;
     size_t inAvail = 0;
@@ -394,7 +399,7 @@ static bool inflateToCache(const ZipEntry* e){
         tinfl_status status = tinfl_decompress(&inflator, inBuf+inPos, &inSize, dict, dict+dictPos, &outSize, flags);
         inPos += inSize;
         inAvail -= inSize;
-        if (!parseChunk(dict + dictPos, outSize)) { return false;}
+        if (!sink(dict + dictPos, outSize)) { return false;}
         dictPos += outSize;
         if (dictPos == TINFL_LZ_DICT_SIZE){
             dictPos = 0;
@@ -407,7 +412,53 @@ static bool inflateToCache(const ZipEntry* e){
             return false;
         }
     }
+    return true;
+}
+
+static bool inflateToCache(const ZipEntry* e){
+    inTag = false;
+    outLen = 0;
+    lastSpace = true;
+    inBody = false;
+    inEntity = false;
+    prev1 = 0;
+    prev2 = 0;
+    if(!inflateFile(e, parseChunk)){ return false;}
     return flushOut();
+}
+
+static bool pathScan(const uint8_t* data, size_t len){
+    const char* key = "full-path=\"";
+    int keyLen = strlen(key);
+    for (size_t i = 0; i < len; i++){
+        char c = data[i];
+        if (copying){
+            if (c == '"'){
+                copying = false;
+                opfPath[opfLen] = '\0';
+            }
+            else if (opfLen < (int)sizeof(opfPath) - 1){
+                opfPath[opfLen] = c;
+                opfLen++;
+            }
+            continue;
+        }
+        if (c == key[matchPos]){
+            matchPos++;
+            if (matchPos == keyLen){
+                copying = true;
+                opfLen = 0;
+                matchPos = 0;
+            }
+        }
+        else{
+            matchPos = 0;
+            if (c == key[0]){
+                matchPos = 1;
+            }
+        }
+    }
+    return true;
 }
 
 // TEST (stage 2): checks mimetype, inflates first chapter to cache
