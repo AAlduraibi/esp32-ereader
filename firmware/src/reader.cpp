@@ -76,43 +76,61 @@ static void drawMenu() {
 }
 
 static int drawWrapped(const char* text){
-    char line[100] = "";
+    displaySetStyle(Style::Normal);
     int y = 15;
     int lines = 0;
+    int x = 0;
+    bool space = false;
     int i = 0;
     while (text[i] != '\0' && lines <PAGE_LINES){
         if (text[i] == '\r' || text[i] == ' '){
             i++;
+            space = true;
         }
         else if (text[i] == '\n'){
-            displayText(0,y,line);
             y += 20;
             lines +=1;
-            line[0] = '\0';
+            x = 0;
+            space = false;
+            i++;
+        }
+        else if (text[i] == MARK_BOLD){
+            displaySetStyle(Style::Bold);
+            i++;
+        }
+        else if (text[i] == MARK_ITALIC){
+            displaySetStyle(Style::Italic);
+            i++;
+        }
+        else if (text[i] == MARK_NORMAL){
+            displaySetStyle(Style::Normal);
             i++;
         }
         else{
             int j = i;
-            while (text[j] != ' ' && text[j] != '\n' && text[j] != '\r' && text[j] != '\0'){
+            while (text[j] != ' ' && text[j] != '\n' && text[j] != '\r' && text[j] != '\0' && text[j] != MARK_BOLD && text[j] != MARK_ITALIC && text[j] != MARK_NORMAL){
                 j++;
             }
-            char test[100];
-            strlcpy(test, line, sizeof(test));
-            if (line[0] != '\0'){
-                strlcat(test, " ", sizeof(test));
+            char word[100] = "";
+            int n = j-i;
+            if (n > (int)sizeof(word) - 1){
+                n = (int)sizeof(word) -1;
             }
-            int room = (int)sizeof(test) - 1 - (int)strlen(test);
-            int n = j - i;
-            if (n > room){
-                n = room;
+            strncat(word, text+i, n);
+            int gap = 0;
+            if (space && x>0){
+                gap = displayTextAdvance(" ");
             }
-            strncat(test, text+i, n);
-            if (displayTextWidth(test) <= 200){
-                strlcpy(line, test, sizeof(line));
+            if (x + gap + displayTextAdvance(word) <= 200){
+                x += gap;
+                displayText(x, y, word);
+                x += displayTextAdvance(word);
+                space = false;
                 i = j;
             }
             else{
-                if (line[0] == '\0'){
+                if (x == 0){
+                    char test[100];
                     int k = j-i;
                     if (k > (int)sizeof(test)-2){
                         k = (int)sizeof(test)-2;
@@ -131,21 +149,19 @@ static int drawWrapped(const char* text){
                     y += 20;
                     lines += 1;
                     i += k;
+                    space = false;
                 }
                 else{
-                    displayText(0,y,line);
                     y += 20;
                     lines +=1;
-                    line[0] = '\0';
+                    x = 0;
+                    space = false;
                 }
                 
             }
         }
     }
-    if (line[0] != '\0' && lines <PAGE_LINES){
-        displayText(0, y, line);
-
-    }
+    displaySetStyle(Style::Normal);
     return i;
 }
 
